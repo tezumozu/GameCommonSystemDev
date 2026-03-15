@@ -14,17 +14,17 @@ namespace GameCommonSystem_V6{
     public class CoroutineHandler : MonoBehaviour , ICoroutineOrderable{
 
         //登録されたコルーチンの稼働状況を記録するリスト
-        static Dictionary<IEnumerator,bool> activeCoroutineDic;
+        Dictionary<IEnumerator,bool> activeCoroutineDic;
         //監視用コルーチンのリスト
-        static Dictionary<IEnumerator,Coroutine> checkerCoroutineDic;
+        Dictionary<IEnumerator,Coroutine> checkerCoroutineDic;
 
 
-        [Inject]
         /// <summary>
         /// シーン更新時に呼び出される関数、別の場所で呼び出さない
         /// </summary>
         /// <param name="sceneloadAsync">シーンの読み込み開始を通知するオブジェクト（更新後のゲームマネージャをZenjectで注入）</param>
-        private void InitHander(ISceneLoadNoticable sceneloadAsync){
+        [Inject]
+        private void InitHandler(ISceneLoadNotifiable sceneloadAsync){
 
             //シーンの終了を監視
             sceneloadAsync.SceneLoadAsync.Subscribe((_)=>{
@@ -126,6 +126,9 @@ namespace GameCommonSystem_V6{
 
         }
 
+
+        
+
         /// <summary>
         /// コルーチンのリストを受け取り、すべてのコルーチンを停止する、
         /// コルーチンがすでに停止していたら何もしない、
@@ -157,8 +160,8 @@ namespace GameCommonSystem_V6{
             
             //コルーチンがアクティブなら停止
             if(activeCoroutineDic[coroutine]){
+                (coroutine as IDisposable)?.Dispose();
                 StopCoroutine(coroutine);
-                return;
             }
 
             //監視用のコルーチンを停止する
@@ -220,7 +223,7 @@ namespace GameCommonSystem_V6{
         /// ture：登録されている＝終了していない
         /// false：登録されていない＝コルーチンの終了
         /// </returns>
-        public bool isRegistrationCoroutine(IEnumerator coroutine){
+        public bool IsRegistrationCoroutine(IEnumerator coroutine){
             return activeCoroutineDic.ContainsKey(coroutine);
         }
 

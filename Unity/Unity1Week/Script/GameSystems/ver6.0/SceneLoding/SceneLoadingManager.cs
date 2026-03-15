@@ -22,7 +22,7 @@ namespace GameCommonSystem_V6{
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="SceneLoadingManager">シーンのロードを管理するクラス</param>
+        /// <param name="nextScene">シーンのロードを管理するクラス</param>
         public SceneLoadingManager(ESceneName nextScene){
             this.nextScene = nextScene;
         }
