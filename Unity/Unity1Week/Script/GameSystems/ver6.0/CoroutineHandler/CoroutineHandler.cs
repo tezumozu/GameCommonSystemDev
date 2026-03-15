@@ -220,7 +220,7 @@ namespace GameCommonSystem_V6{
         /// </summary>
         /// <param name="coroutine">対象のコルーチン</param>
         /// <returns> 
-        /// ture：登録されている＝終了していない
+        /// true：登録されている＝終了していない
         /// false：登録されていない＝コルーチンの終了
         /// </returns>
         public bool IsRegistrationCoroutine(IEnumerator coroutine){
