@@ -1,0 +1,22 @@
+@startuml CSVDataBaseReader
+    class CSVDataBaceReader<Where T : DataBaceRecord>{
+        +Dictionary<string , T> ReadCSVDataBase(string filePath)
+        +void WriteCSVDataBase( Dictionary<string,T> dataBace)
+    }
+
+    class DataBaceRecord{
+        +string Id
+    }
+
+    class HogeHogeDataBaseRecord{
+        +int Column1
+        +bool Column2
+        +int Column3
+        +bool Column4
+    }
+
+    CSVDataBaceReader ..> DataBaceRecord
+    HogeHogeDataBaseRecord -left-|> DataBaceRecord
+
+
+@enduml

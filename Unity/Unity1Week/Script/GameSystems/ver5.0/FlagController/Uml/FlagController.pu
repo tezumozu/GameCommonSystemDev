@@ -1,0 +1,36 @@
+@startuml FlagController
+
+    class TestFlagController <MonoBehaviour>{
+        
+    }
+
+    abstract class FlagController {
+        # Dictionary<String,bool> FlagList;
+        # Subject<String> flagCheckSubject
+        + IObservable<String> FlagCheckSubject { get flagCheckSubject }
+
+        # void loadFlagList( string filePath )
+        + void SetFlag(string flagID , bool flagData)
+    }
+
+    class FlagData{
+        + string FlagName
+        + string FlagValue
+    }
+
+    interface IFlagReadable{
+        + IObservable<String> FlagCheckSubject { get flagCheckSubject }
+        + bool GetFlagStatus(string flagId)
+    }
+
+    interface IFlagUpdatable{
+        + void SetFlag(string flgaId , bool flagData)
+    }
+
+    FlagController -left-|> IFlagReadable
+    FlagController -down-|> IFlagUpdatable
+    FlagController -right-> FlagData
+
+    TestFlagController --|> FlagController
+
+@enduml

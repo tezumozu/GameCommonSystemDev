@@ -1,0 +1,52 @@
+@startuml SoundOptionUI
+    abstract class SoundOptionManager <<MonoBehaviour>>{
+        [SerializeField]
+        # S_SoundOptionData InitSoundOptionData
+
+        # static S_SoundOptionData soundOptionData
+        # static bool isInit
+
+        # static Subject<S_SoundOptionData> UpdateOptionSubject
+        + static IObservable<S_SoundOptionData> UpdateOptionAsync => UpdateOptionSubject
+
+        + static S_SoundOptionData GetSoundOptionData => soundOptionData
+
+        - void Awake()
+    }
+
+    class SampleSoundUIManager{
+        [SerializeField]
+        - Slider SoundSlider
+        [SerializeField]
+        - Slider SESlider
+        [SerializeField]
+        - Slider BGMSlider
+
+        [SerializeField]
+        - SoundPlayer soundPlayer
+        [SerializeField]
+        - AudioClip desitionSE
+
+        -void Start()
+
+        + void SetActiveUI(bool flag)
+        + void UpdateOption()
+        + void TestSE()
+    }
+
+    class SoundPlayer{
+        [SerializeField]
+        - AudioSource audioSource;
+
+        # S_SoundOptionData option;
+
+        - void Start()
+        + void PlaySE(AudioClip se)
+        + void PlayBGM(AudioClip bgm , bool isLoop)
+        + void StopSound()
+    }
+
+    SoundPlayer --> SoundOptionManager : Observe
+    SampleSoundUIManager --|> SoundOptionManager 
+    SampleSoundUIManager -right-> SoundPlayer : PlaySE()
+@enduml

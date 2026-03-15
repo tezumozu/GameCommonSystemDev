@@ -1,0 +1,82 @@
+@startuml SectionManager
+    '---------------------------------- DataBase -------------------------------'
+    
+    class DataBaceRecord {
+        +[Column(0)] string Id { get; set;}
+    }
+
+    class SectionStractCsvRecord {
+        + [Column(1)] string PearentSectionId
+        + [Column(2)] string PhaseId
+        + [Column(3)] bool IsStart
+        + [Column(4)] bool IsLast
+        + [Column(5)] string NextSectionId
+    }
+
+    class MissionFlagStractCsvRecord{
+        + [Column(1)] string PearentSectionId
+        + [Column(2)] string MissionFlagId
+    }
+
+    '---------------------------------- Class -------------------------------'
+   
+    class StorySection{
+        - Subject< string > finishSectionSubject
+        + IObservable< string > FinishSectionSubject {get clearSectionSubject}
+
+        - Subject< string > phaseUpdateSubject
+        + IObservable< string > PhaseUpdateSubject {get phaseUpdateSubject}
+
+        + Dictionary<string, PhaseStractCsvRecord> PhaseStractDic
+        - PhaseClearChecker currentPhase
+
+        + Section( string SectionId )
+    }
+
+    class PhaseClearChecker{
+        - Subject< string > clearPhaseSubject
+        + IObservable< string > ClearPhaseSubject {get clearStateSubject}
+        - Dictionary< string , bool > MissionClearDic
+
+        + PhaseClearChecker(string PhaseId , IFlagReadable)
+        - void CheckMissonClear()
+    }
+
+    interface IPhaseUpdateCheckable{
+        + IObservable< string > PhaseUpdateSubject {get;}
+    }
+
+    interface ISectionFinishCheckable{
+        + IObservable< string > FinishSectionSubject {get;}
+    }
+
+    interface IFlagReadable{
+        + IObservable<String> FlagCheckSubject { get flagCheckSubject }
+        + bool GetFlagStatus(string flagId)
+    }
+
+    class FlagController{
+        - Dictionary<String,bool> FlagList;
+        - Subject<String> flagCheckSubject
+        + IObservable<String> FlagCheckSubject { get flagCheckSubject }
+
+        - void LoadFlag( string filePath )
+        - void loadFlagList( string filePath )
+        + FlagController( strig filePath )
+        + FlagController( strig FlagListPath , strig FlagDataPath )
+        + void SetFlag(string flagID , bool flagData)
+    }
+
+    StorySection --> PhaseClearChecker : 生成 監視
+    StorySection -left-|> IPhaseUpdateCheckable
+    StorySection -up-|> ISectionFinishCheckable
+    StorySection -right-> SectionStractCsvRecord
+
+    PhaseClearChecker *--> IFlagReadable
+    FlagController -right-|> IFlagReadable
+    PhaseClearChecker -right-> MissionFlagStractCsvRecord
+
+    SectionStractCsvRecord -down-|> DataBaceRecord
+    MissionFlagStractCsvRecord -up-|> DataBaceRecord
+
+@enduml

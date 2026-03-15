@@ -1,0 +1,368 @@
+Unity1Week用ゲームメインシステムライブラリ
+
+空間名 namespace：Unity1Week_MainGameSystem_v4
+
+概要
+　1週間ゲームジャムに参加する際に素早くゲームを制作するための基盤として使える
+ゲームシステム用のライブラリ&アセット集、ゲームシーンの初期化～読み込みまでのループ、
+非MonoBehaviourクラスにおける非同期処理の実現、ゲームの状態管理、ロード画面
+、音量のセッティング、が含まれる
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+【クラス】
+-------------------------------------------------------------------------------------
+【SceneGameManager < T >】抽象クラス　継承・実装：I_SceneLoadNoticable
+制約：T Enum
+　各シーンにおけるゲーム部分の状態管理を行うクラス
+
+
+【コンストラクタ】
+・SceneGameManager ()
+　リストの作成など最低限の初期化を行う
+各シーンごとに初期化の内容は変わるので、基本は継承先の子オブジェクトに詳細な初期化を行わせる
+
+
+【フィールド・プロパティ】
+・protected T currentState
+型：T
+スコープ：protected
+　現在の状態を表すEnum
+
+・protected Subject<E_SceneName> SceneLoadSubject
+型：Subject<E_SceneName>
+スコープ：protected
+　次のシーンの読み込みが必要になったことを通知するサブジェクト
+
+・public IObservable<E_SceneName> SceneLoadAsync　=> SceneLoadSubject
+型：IObservable<E_SceneName>
+スコープ：public
+　読み取り専用のSceneLoadSubject
+
+・protected Dictionary< T , GameState<T> > gameStateDic
+型：Dictionary< T , GameState<T> >
+スコープ：protected
+　ゲームの状態を表すクラスを管理するための辞書
+
+・protected List<IDisposable> disposableList
+型：List<IDisposable>
+スコープ：protected
+　購読しているUniRxのSubjectのSubscribeをリスト化し、
+シーン終了時に全て購読を停止するためのフィールド
+
+
+【メソッド】
+・abstract IEnumerator InitGame()
+引数：なし　戻り値：IEnumerator
+スコープ：public
+　ゲームの初期化処理を行うコルーチン
+重い読み込み処理などはコンストラクタではなく、こちらでやる
+
+・abstract IEnumerator StartGame()
+引数：なし　戻り値：IEnumerator
+スコープ：public
+　ゲームを開始し、処理するコルーチン
+
+・virtual void ReleaseObject()
+引数なし　戻り値：なし
+スコープ：public
+不要なオブジェクトの削除を行い、メモリを開放する
+
+
+
+-------------------------------------------------------------------------------------
+【SceneLoopManager】抽象クラス　親：MonoBehaviour
+　シーンの処理の流れを制御するクラス。
+主に初期化、シーン中、シーン終了時の3つの状態を管理・制御する。
+
+
+【コンストラクタ】
+・SceneLoopManager
+　デフォルトコンストラクタ、MonoBehaviourのため呼び出さない。
+
+
+【フィールド・プロパティ】
+
+・int GameFrameLate [SerializeField]
+型：int
+スコープ：private
+　ゲームのフレームレートを設定するフィールド、
+シリアライズフィールド、初期値は60
+
+・LoadingUIUpdater loadingUI　[SerializeField]
+型：LoadingUIUpdater
+スコープ：private
+　ローディング中のUIを制御するクラスのオブジェクトを格納するフィールド
+シリアライズフィールド
+
+・bool isHaveToLoading
+型：bool
+スコープ：private
+　非同期処理でシーンの終了を監視するためのフラグを格納するフィールド。
+初期値はfalse
+
+・SceneLoadingManager sceneLoadingManager
+型：SceneLoadingManager
+スコープ：private
+　シーンの読み込み処理を行うクラスのオブジェクトを格納するフィールド。
+
+・List<IDisposable> disposeList
+型：List<IDisposable>
+スコープ：private
+　購読しているUniRxのSubjectのSubscribeをリスト化し、
+シーン終了時に全て購読を停止するためのフィールド
+
+・SceneGameManager<T> gameManager
+型：SceneGameManager<T>
+スコープ：private
+　シーン内のゲームの状態を管理するゲームマネージャを格納するフィールド。
+
+
+【メソッド】
+・void InjectObject (SceneGameManager<T> gameManager) [Inject]
+引数：SceneGameManager<T> gameManager　戻り値：なし
+スコープ：private
+　必要な変数を受け取り、生成し、サブジェクトの購読を始めるなど簡単な初期化処理を行う
+
+・void Start()
+引数：なし　戻り値：なし
+スコープ：private
+　Unityの標準関数、初期化処理を行う
+
+・IEnumerator GameUpdate()
+引数なし　戻り値：IEnumerator
+スコープ：private
+　シーンの処理を開始させ、終了を待つコルーチン
+ゲームマネージャのStartGameを呼びだし、シーンの終了まで待機する
+ 
+・void activeIsHaveToLoading(E_SceneName sceneName)
+引数：E_SceneName　戻り値：なし
+スコープ：private
+　シーンの終了を確認した際に呼び出す関数
+シーンロードのフラグを立て、次に呼び出すシーンをSceneLoadingManagerに伝える
+
+
+
+-------------------------------------------------------------------------------------
+【GameState <T>】抽象クラス　継承・実装：IDisposable
+制約：T Enum
+各シーン内におけるゲームの状態を表すクラス。
+
+
+【コンストラクタ】
+・GameState
+　引数なし
+デフォルトコンストラクタ、詳細は継承先で定義する
+
+
+【フィールド・プロパティ】
+・finishStateSubject
+型：Subject<T>
+スコープ：private 
+　状態における処理が終了したことを通知できるSubject
+
+・IObservable<T> FinishStateAsync => finishStateSubject
+型：IObservable<T> 
+スコープ：public
+ フィールドfinishStateSubjectの読み取り専用フィールド
+
+・static Subject<Unit> finishGameSubject
+型：Subject<Unit>
+スコープ：protected
+　静的フィールド、シーン内におけるゲームの終了を通知するサブジェクト
+
+・static IObservable<Unit> FinishGameAsync => finishGameSubject;
+型：IObservable<Unit>
+スコープ：protected
+　静的フィールド、フィールドfinishGameSubjectの読み取り専用フィールド
+
+・List<IDisposable> disposableList
+型：List<IDisposable>
+スコープ：protected
+　購読しているSubjectのリスト
+
+
+【メソッド】
+・abstract IEnumerator UpdateState()　
+引数：なし　戻り値：IEnumerator
+スコープ：public
+　抽象メソッド、継承先のクラスが表す状態における処理を
+コルーチンとして定義する
+
+
+【実装メソッド】
+・Dispose ()
+スコープ：public
+引数：なし　戻り値：なし
+IDisposableにて実装、購読しているSubjectをDisposeする
+
+
+
+-------------------------------------------------------------------------------------
+【CoroutineHandler】クラス　：SingletonMonoBehaviour
+　Task、UniTaskなど並列処理がWebGLで使えないので 
+非MonoBehaviourクラス も並列処理ができるようコルーチンを受け取り、管理するクラス。
+コルーチンの開始・停止・再開だけでなく、コルーチンのリストを受け取り、複数コルーチン
+の開始と終了を監視もできる。SingletonMonoBehaviourを継承する
+
+
+【コンストラクタ】　親：SingletonMonoBehaviour
+・CoroutineHandler
+　引数なし
+デフォルトコンストラクタ、MonoBehaviourのため呼び出さない
+
+
+【フィールド】
+・activeCoroutinDic　static
+型：Dictionary< IEnumerator , bool >
+static、private
+　登録されているコルーチンの稼働状態を記録する辞書
+IEnumerator：登録されているコルーチンのポインタ
+bool：そのコルーチンが現在稼働しているかを表すフラグ
+
+・checkerCoroutineDic　static
+型：Dictionary< IEnumerator , Coroutine >
+スコープ：private
+　登録されているコルーチンを記録する辞書
+IEnumerator：登録されているコルーチンのポインタ
+Coroutine：そのコルーチンの終了を監視するコルーチン
+
+
+【メソッド】
+・void UpdateSceneInjection ( I_SceneLoadNoticable sceneloadAsync ) [Inject]
+スコープ：private
+引数： I_SceneLoadNoticable sceneloadAsync 戻り値：なし
+　シーン切り替え時にZenjectによって呼び出される初期化処理、
+基本呼び出さない
+
+・IEnumerator CheckFinishCoroutine ( IEnumerator coroutine )
+スコープ：private
+引数：IEnumerator coroutine 戻り値：IEnumerator 
+　静的メソッド、コルーチンの終了を監視するためのコルーチン
+
+・static void OrderStartCoroutine ( IEnumerator coroutine )
+スコープ：public
+引数：IEnumerator coroutine 戻り値：なし
+オーバロード：あり（ 引数：List<IEnumerator> coroutineList ）
+　静的メソッド、コルーチンのポインタを受け取り、そのコルーチンを開始する
+登録済みのコルーチンには何もしない、停止している登録済みのコルーチンを渡した場合
+そのコルーチンを再開させる。
+引数をリストにしたオーバロードがある。リスト内のすべてのコルーチンを開始させる。
+
+・static void OrderStopCoroutine ( IEnumerator coroutine )
+スコープ：public
+引数：IEnumerator coroutine 戻り値：なし
+オーバロード：あり（ 引数：List<IEnumerator> coroutineList ）
+　静的メソッド、コルーチンのポインタを受け取り、そのコルーチンを停止する。
+未登録のコルーチンには何もしない、すでに停止している登録済みの場合も同様。
+引数をリストにしたオーバロードがある。リスト内のすべてのコルーチンを停止させる。
+
+・static void OrderKillCoroutine ( IEnumerator coroutine )
+スコープ：public　
+引数：IEnumerator coroutine 戻り値：なし
+オーバロード：あり（ 引数：List<IEnumerator> coroutineList ）
+　静的メソッド、コルーチンのポインタを受け取り、そのコルーチンとそれを監視しているコルーチンを停止し辞書から削除する。
+未登録のコルーチンには何もしない、すでに停止している登録済みコルーチンの場合は辞書の削除のみ行う。
+引数をリストにしたオーバロードがある。リスト内のすべてのコルーチンを停止し辞書から削除する。
+
+・static bool isRegistrationCoroutine ( IEnumerator coroutine )
+スコープ：public
+引数：IEnumerator coroutine 戻り値：bool
+オーバロード：あり（ 引数：List<IEnumerator> coroutineList ）
+　静的メソッド、コルーチンのポインタを受け取り、そのコルーチンが登録されているか確認する。
+処理が終了したコルーチンは辞書から削除されるため、コルーチンの終了を確認するのにも使える。
+true：登録されたコルーチンである ＝　終了していない
+false：登録されていないコルーチンである　＝　終了した
+引数をリストにしたオーバロードがある。
+true：登録されたコルーチンが含まれている ＝　全て終了していない
+false：全て登録されていないコルーチンである　＝　全て終了した
+
+
+【継承メソッド】
+・OnInitalize()
+スコープ：protected
+引数：なし　戻り値：なし
+　SingletonMonoBehaviourから継承、オブジェクトが生成される際の初期化処理
+
+
+
+-------------------------------------------------------------------------------------
+【LoadingUIUpdater】抽象クラス
+　ローディングUIを管理する抽象クラス
+シリアライズしたいため、インターフェースではなく、抽象クラスで実装
+
+【フィールド・プロパティ】
+　なし
+
+【メソッド】
+・abstract void IsActiveLoadingUI(bool flag);
+引数：bool flag　戻り値：なし
+スコープ：public
+　ローディングUIを有効にしたり、無効にする
+true    :有効にする
+false   :無効にする
+
+
+-------------------------------------------------------------------------------------
+【SceneLoadingManager】クラス
+　シーンの読み込み処理を行うクラス
+
+
+【コンストラクタ】
+・SceneLoadingManager()
+引数：なし
+スコープ：public
+　初期化を行うシンプルなコンストラクタ
+
+
+【フィールド・プロパティ】
+・AsyncOperation asyncLoad
+型：AsyncOperation
+スコープ：private
+　シーンの読み込みを制御するクラスを格納するフィールド
+
+・E_SceneName NextScene;
+型：E_SceneName
+スコープ：public
+　次に読み込むシーンを表すフィールド
+シーンの指定と読み込み開始のタイミングを制御しやすくするために
+あえて直接外部からしていする形にしている
+
+
+【メソッド】
+・IEnumerator LoadScene()
+引数：なし　戻り値：IEnumerator
+スコープ：public
+　シーンの読み込みを行うコルーチン
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+
+【インタフェース】
+-------------------------------------------------------------------------------------
+【I_SceneLoadNoticable】
+
+【プロパティ】
+・IObservable<E_SceneName> SceneLoadAsync { get; }
+ゲームシーンのロード開始を通知するIObservable
+
+【メソッド】
+なし
+
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+
+【Enum】
+-------------------------------------------------------------------------------------
+【E_SceneName】
+シーン名を表すEnum、実際にこのライブラリを使うときは、
+ここに制作したシーン名を追加して使用する
+
+【値】
+Sample
+
+-------------------------------------------------------------------------------------

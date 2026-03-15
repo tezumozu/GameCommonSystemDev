@@ -1,0 +1,54 @@
+@startuml CoroutineHanderClass
+
+class CoroutineHandler {
+
+    - static Dictionary< IEnumerator , bool > activeCoroutinDic
+    - static Dictionary< IEnumerator , Coroutine > checkerCoroutineDic
+
+    - [Inject] void UpdateSceneInjection ( I_SceneLoadNoticable sceneloadAsync )
+    # override void OnInitalize()
+
+    - static IEnumerator CheckFinishCoroutine(IEnumerator coroutine)
+
+    + static void OrderStartCoroutine ( IEnumerator coroutine )
+    + static void OrderStopCoroutine ( IEnumerator coroutine )
+    + static void OrderKillCoroutine ( IEnumerator coroutine )
+    + static bool isRegistrationCoroutine ( IEnumerator coroutine )
+
+    + static void OrderStartCoroutine ( List<IEnumerator> coroutine )
+    + static void OrderStopCoroutine ( List<IEnumerator> coroutine )
+    + static void OrderKillCoroutine ( List<IEnumerator> coroutine )
+    + static bool isRegistrationCoroutine ( List<IEnumerator> coroutine )
+
+}
+
+
+interface I_SceneLoadNoticable{
+    + IObservable<E_SceneName> SceneLoadAsync { get; }
+}
+
+
+enum E_SceneName{
+    Sample
+}
+
+abstract class SceneGameManager<T>{
+    # T currentState
+    # Dictionary< T , GameState<T> > StateDic
+    # Subject<E_SceneName> SceneLoadSubject
+    + IObservable<E_SceneName> SceneLoadAsync { get; }
+
+    + SceneGameManager()
+
+    + abstract IEnumerator InitGame()
+    + abstract IEnumerator StartGame()
+    + abstract void ReleaseObject()
+}
+
+
+CoroutineHandler "1" --> "1" I_SceneLoadNoticable : Observe
+E_SceneName <-left- CoroutineHandler
+E_SceneName <-left- I_SceneLoadNoticable
+SceneGameManager -right-|> I_SceneLoadNoticable
+
+@enduml

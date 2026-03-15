@@ -1,0 +1,76 @@
+@startuml GameLoopManager_Frow
+participant Unity
+participant MonoInstaller_Zenject as zenject
+participant GameLoopManager
+participant SceneGameManager
+participant GameState
+participant SceneLoadManager
+
+group D I
+    activate zenject
+    zenject --> GameLoopManager : ObjectInject
+    activate GameLoopManager
+    GameLoopManager --> SceneGameManager : Observe
+    GameLoopManager --> SceneLoadManager : OnjectInject & To Instance
+    activate SceneLoadManager
+    SceneLoadManager --> SceneLoadManager : Constracter
+    SceneLoadManager --> GameLoopManager
+    deactivate SceneLoadManager
+    GameLoopManager --> zenject
+    deactivate GameLoopManager
+    deactivate zenject
+end
+
+group Start
+    Unity --> GameLoopManager : Start()
+    activate GameLoopManager
+    GameLoopManager --> GameLoopManager : Init
+    GameLoopManager --> GameLoopManager : StartCoroutine : GameUpdate
+    GameLoopManager --> Unity
+
+end
+
+    group Coroutine [GameUpdate]
+        GameLoopManager --> LoadingUI : To Active
+        activate LoadingUI
+        LoadingUI --> LoadingUI : StartAnim
+        
+        GameLoopManager --> SceneGameManager : InitGame()
+        activate SceneGameManager
+        SceneGameManager --> GameState : Obseve
+        GameLoopManager --> GameLoopManager : 待機
+        SceneGameManager --> GameLoopManager
+        deactivate SceneGameManager
+        GameLoopManager --> LoadingUI : To Deactive
+        deactivate LoadingUI
+
+        GameLoopManager --> SceneGameManager : StartCoroutine : StartGame
+        group Coroutine [StartGame]
+            activate SceneGameManager
+            SceneGameManager --> GameState : StartCoroutine : UpdateState
+            activate GameState
+            deactivate SceneGameManager
+        end
+        group Coroutine [UpdateState]
+            GameState --> GameState : Update
+            GameState --> SceneGameManager : OnNext : Finish State
+            activate SceneGameManager
+            SceneGameManager --> GameLoopManager : OnNecx : Finish Scene
+            deactivate SceneGameManager
+            deactivate GameState
+        end
+
+        GameLoopManager --> SceneGameManager : RereaseObject
+        GameLoopManager --> LoadingUI : ToActive
+        activate LoadingUI
+        LoadingUI --> LoadingUI : StartAnim
+        GameLoopManager --> SceneLoadManager : LoadScene
+        activate SceneLoadManager
+        
+        group SceneLoadAsync
+            deactivate GameLoopManager
+            SceneLoadManager --> SceneLoadManager : LoadScene
+        end
+        
+
+    end 

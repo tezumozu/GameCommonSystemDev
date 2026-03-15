@@ -1,0 +1,141 @@
+@startuml SectionManager
+
+    '---------------------------------- DataBase -------------------------------'
+    class DataBaceRecord {
+        +[Column(0)] string Id { get; set;}
+    }
+
+    class MainStoryStractCsvRecord {
+        + [Column(1)] string PearentStoryId
+        + [Column(2)] string ChapterId
+        + [Column(3)] bool IsStart
+        + [Column(4)] bool IsLast
+        + [Column(5)] string NextChapterId
+    }
+
+    class ChapterStractCsvRecord{
+        + [Column(1)] string PearentChapterId
+        + [Column(2)] string SectionId
+    }
+
+    class SectionStractCsvRecord {
+        + [Column(1)] string PearentSectionId
+        + [Column(2)] string PhaseId
+        + [Column(3)] bool IsStart
+        + [Column(4)] bool IsLast
+        + [Column(5)] string NextSectionId
+    }
+
+    class MissionFlagStractCsvRecord{
+        + [Column(1)] string PearentSectionId
+        + [Column(2)] string MissionFlagId
+    }
+
+    DataBaceRecord <|-up- MainStoryStractCsvRecord
+    DataBaceRecord <|-up- ChapterStractCsvRecord
+    DataBaceRecord <|-left- SectionStractCsvRecord
+    DataBaceRecord <|-- MissionFlagStractCsvRecord
+
+    '---------------------------------- Class -------------------------------'
+
+    class GameObject{}
+
+    class MainStoryManager{
+        +Dictionary<string,ChapterStractCsvRecord> ChapterStractDic
+        -Chapter currentChapter
+
+        +SectionManager(string MainChapterStractCsvFile ,MainStoryId)
+    }
+
+
+    class Chapter{
+        -Subject< string > clearStateSubject
+        +IObservable< string > ClearStateSubject {get clearStateSubject}
+        -Dictionary< string , bool > SectionClearDic
+        -SectionManager sectionManager
+
+        +Chapter(string ChapterId , SectionManager sectionManager)
+    }
+
+
+    class SectionManager <MonoBehaviour>{
+        -Dictionary< string , Section> activeSectionList
+        +Section StartSection(string chapterId)
+    }
+
+
+    class Section{
+        -Subject< string > clearSectionSubject
+        +IObservable< string > ClearSectionSubject {get clearSectionSubject}
+
+        -Subject< string > phaseUpdateSubject
+        +IObservable< string > PhaseUpdateSubject {get phaseUpdateSubject}
+
+        +Dictionary<string, PhaseStractCsvRecord> PhaseStractDic
+        -Chapter currentChapter
+
+        +Section( string SectionId , GamgeStateManager stateManager )
+    }
+
+    class GameStateManager{
+        +setICeckPhasable
+    }
+
+    interface IPhaseCheckable{
+        -Subject< string > phaseUpdateSubject
+        +IObservable< string > PhaseUpdateSubject {get phaseUpdateSubject}
+    }
+
+
+    class PhaseClearChecker{
+        -Subject< string > clearStateSubject
+        +IObservable< string > ClearStateSubject {get clearStateSubject}
+        -Dictionary< string , bool > MissionClearDic
+        + PhaseClearChecker(string PhaseId , IFlagReadable)
+    }
+
+
+    interface IFlagReadable{
+        + IObservable<String> FlagCheckSubject { get flagCheckSubject }
+        + bool GetFlagStatus(string flagId)
+    }
+
+    class FlagController{
+        - Dictionary<String,bool> FlagList;
+        - Subject<String> flagCheckSubject
+        + IObservable<String> FlagCheckSubject { get flagCheckSubject }
+
+        - void LoadFlag( string filePath )
+        - void loadFlagList( string filePath )
+        + FlagController( strig filePath )
+        + FlagController( strig FlagListPath , strig FlagDataPath )
+        + void SetFlag(string flagID , bool flagData)
+    }
+
+    MainStoryManager *-left-> Chapter : 生成 , クリアしたか監視
+    MainStoryManager -down-> MainStoryStractCsvRecord
+
+    Chapter -left-> SectionManager : Sectionの生成を依頼 (メインストーリー)
+    Chapter -down-> ChapterStractCsvRecord
+
+    GameObject-down-> SectionManager : Sectionの生成を依頼（サブストーリー）
+
+    SectionManager *--> Section : 生成　監視
+
+    Section -left-|> IPhaseCheckable 
+    Section -left-> GameStateManager : 登録
+    Section *-down-> PhaseClearChecker : 生成　監視
+    Section --> SectionStractCsvRecord
+
+    GameStateManager --> IPhaseCheckable : 監視
+    
+    PhaseClearChecker -down-> IFlagReadable
+    PhaseClearChecker --> MissionFlagStractCsvRecord
+
+
+    FlagController -up-|> IFlagReadable
+
+    
+    
+    
+@enduml
