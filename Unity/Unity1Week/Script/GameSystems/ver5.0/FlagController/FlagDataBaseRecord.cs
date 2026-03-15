@@ -10,6 +10,9 @@ namespace GameCommonSystem_V5 {
 
         [Column(1)]
         public string FlagName ;
+
+        [Column(2)]
+        public bool DefaultFlagValue ;
     }
 
 }
